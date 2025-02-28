@@ -1,9 +1,10 @@
 package com.mim.config
 
-import com.mim.jwt.JWTFilter
+import com.mim.jwt.JWTCookieFilter
 import com.mim.jwt.JWTUtil
 import com.mim.oauth2.CustomSuccessHandler
 import com.mim.service.CustomOAuth2UserService
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -18,7 +19,9 @@ import org.springframework.web.cors.CorsConfiguration
 class SecurityConfig(
     private val customOAuth2UserService: CustomOAuth2UserService,
     private val customSuccessHandler: CustomSuccessHandler,
-    private val jwtUtil: JWTUtil
+    private val jwtUtil: JWTUtil,
+    @Value("\${cors.allowed-origin}")
+    private val allowedOrigin: String
 ) {
 
     @Bean
@@ -29,7 +32,7 @@ class SecurityConfig(
             .cors {
                 it.configurationSource {
                     CorsConfiguration().apply {
-                        allowedOrigins = listOf("http://127.0.0.1:3000")
+                        allowedOrigins = listOf(allowedOrigin)
                         allowedMethods = listOf("*")
                         allowCredentials = true
                         allowedHeaders = listOf("*")
@@ -41,7 +44,7 @@ class SecurityConfig(
             .csrf { it.disable() }
             .formLogin { it.disable() }
             .httpBasic { it.disable() }
-            .addFilterBefore(JWTFilter(jwtUtil), UsernamePasswordAuthenticationFilter::class.java)
+            .addFilterBefore(JWTCookieFilter(jwtUtil), UsernamePasswordAuthenticationFilter::class.java)
             .oauth2Login {
                 it.userInfoEndpoint { config ->
                     config.userService(customOAuth2UserService)
@@ -50,7 +53,7 @@ class SecurityConfig(
             }
             .authorizeHttpRequests {
                 it
-                    .requestMatchers("/").permitAll()
+                    .requestMatchers("/", "/reissue").permitAll()
                     .requestMatchers("my").hasRole("USER")
                     .anyRequest().authenticated()
             }
