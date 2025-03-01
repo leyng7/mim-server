@@ -1,6 +1,6 @@
 package com.mim.config
 
-import com.mim.jwt.JWTCookieFilter
+import com.mim.jwt.JWTHeaderFilter
 import com.mim.jwt.JWTUtil
 import com.mim.oauth2.CustomSuccessHandler
 import com.mim.service.CustomOAuth2UserService
@@ -44,7 +44,7 @@ class SecurityConfig(
             .csrf { it.disable() }
             .formLogin { it.disable() }
             .httpBasic { it.disable() }
-            .addFilterBefore(JWTCookieFilter(jwtUtil), UsernamePasswordAuthenticationFilter::class.java)
+            .addFilterBefore(JWTHeaderFilter(jwtUtil), UsernamePasswordAuthenticationFilter::class.java)
             .oauth2Login {
                 it.userInfoEndpoint { config ->
                     config.userService(customOAuth2UserService)
@@ -53,7 +53,15 @@ class SecurityConfig(
             }
             .authorizeHttpRequests {
                 it
-                    .requestMatchers("/", "/reissue").permitAll()
+                    .requestMatchers(
+                        "/",
+                        "/reissue",
+                        "/swagger-ui/**",
+                        "/swagger-ui.html",
+                        "/v3/api-docs/**",
+                        "/swagger-resources/**",
+                        "/webjars/**"
+                    ).permitAll()
                     .requestMatchers("my").hasRole("USER")
                     .anyRequest().authenticated()
             }

@@ -29,6 +29,8 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
 
+    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.3.0")
+
     implementation("io.jsonwebtoken:jjwt-api:0.12.3")
     implementation("io.jsonwebtoken:jjwt-impl:0.12.3")
     implementation("io.jsonwebtoken:jjwt-jackson:0.12.3")

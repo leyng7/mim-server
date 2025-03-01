@@ -5,6 +5,9 @@ import com.mim.jwt.JWTType
 import com.mim.jwt.JWTUtil
 import com.mim.repository.RefreshRepository
 import io.jsonwebtoken.ExpiredJwtException
+import io.swagger.v3.oas.annotations.Operation
+import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseEntity
@@ -13,14 +16,17 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import java.time.Duration
 
+@Tag(name = "토큰 재발급")
 @RestController
 class ReissueController (
     private val jwtUtil: JWTUtil,
     private val refreshRepository: RefreshRepository
 ) {
 
+    @Operation(summary = "리프레시 토큰으로 새 토큰 발급")
     @GetMapping("/reissue")
     fun reissue(
+        @Parameter(description = "리프레시 토큰")
         @CookieValue(name = "refresh_token") refreshToken: String,
         response: HttpServletResponse
     ): ResponseEntity<String> {
