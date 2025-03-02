@@ -3,6 +3,7 @@ package com.mim.controller
 import com.mim.dto.LoginUser
 import com.mim.dto.ProfileRequest
 import com.mim.dto.User
+import com.mim.response.ErrorResponse
 import com.mim.service.UserService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.media.Content
@@ -27,9 +28,21 @@ class ProfileController(
         description = "사용자의 프로필 정보를 업데이트합니다.",
         security = [SecurityRequirement(name = "Bearer Authentication")]
     )
-    @ApiResponse(
-        responseCode = "200",
-        description = "프로필 업데이트 성공",
+    @ApiResponses(
+        value = [
+            ApiResponse(
+                responseCode = "200",
+                description = "프로필 업데이트 성공",
+            ),
+            ApiResponse(
+                responseCode = "400",
+                description = "잘못된 요청",
+                content = [Content(
+                    mediaType = "application/json",
+                    schema = Schema(implementation = ErrorResponse::class)
+                )]
+            ),
+        ]
     )
     @PatchMapping("/profile")
     fun updateProfile(

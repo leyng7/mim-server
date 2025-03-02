@@ -3,9 +3,11 @@ package com.mim.controller
 import com.mim.dto.LoginUser
 import com.mim.dto.User
 import com.mim.service.UserService
+import io.swagger.v3.oas.annotations.Hidden
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 
+@Hidden
 @RestController
 class UserController(
     private val userService: UserService
