@@ -17,7 +17,7 @@ class CustomOAuth2User(
     }
 
     override fun getAuthorities(): Collection<GrantedAuthority> {
-        return setOf(SimpleGrantedAuthority(user.role))
+        return setOf(SimpleGrantedAuthority("ROLE_${user.role}"))
     }
 
 }

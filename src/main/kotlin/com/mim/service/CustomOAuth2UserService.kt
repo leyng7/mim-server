@@ -32,8 +32,7 @@ class CustomOAuth2UserService(
             changeName(oAuth2Response.name)
         } ?: UserEntity(
             username = username,
-            name = oAuth2Response.name,
-            role = "ROLE_USER"
+            name = oAuth2Response.name
         )
 
         userRepository.save(userEntity)

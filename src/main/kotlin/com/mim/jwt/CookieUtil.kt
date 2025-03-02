@@ -16,6 +16,7 @@ object CookieUtil {
             this.maxAge = maxAge.toSeconds().toInt()
             this.path = path
             this.isHttpOnly = isHttpOnly
+            this.domain = "mim.com"
             this.secure = isSecure
         }
     }

@@ -1,5 +1,6 @@
 package com.mim.jwt
 
+import com.mim.entity.Role
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import org.springframework.beans.factory.annotation.Value
@@ -22,8 +23,8 @@ class JWTUtil(
         return parseToken(token).get("username", String::class.java)
     }
 
-    fun getRole(token: String): String {
-        return parseToken(token).get("role", String::class.java)
+    fun getRole(token: String): Role {
+        return Role.valueOf(parseToken(token).get("role", String::class.java))
     }
 
     fun isExpired(token: String): Boolean {
@@ -37,14 +38,14 @@ class JWTUtil(
     fun createJwt(
         type: JWTType,
         username: String,
-        role: String,
+        role: Role,
         duration: Duration = Duration.ofDays(1)
     ): String {
         val now = Instant.now()
         return Jwts.builder()
             .claim("type", type.label)
             .claim("username", username)
-            .claim("role", role)
+            .claim("role", role.name)
             .issuedAt(Date.from(now))
             .expiration(Date.from(now.plus(duration)))
             .signWith(secretKey)
