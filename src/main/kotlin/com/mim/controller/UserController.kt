@@ -11,7 +11,7 @@ class UserController(
     private val userService: UserService
 ) {
 
-    @GetMapping("/user")
+    @GetMapping("/users")
     fun updateProfile(
         @LoginUser user: User
     ) {

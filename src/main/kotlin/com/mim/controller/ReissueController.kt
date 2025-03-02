@@ -8,6 +8,9 @@ import com.mim.repository.RefreshRepository
 import io.jsonwebtoken.ExpiredJwtException
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.headers.Header
+import io.swagger.v3.oas.annotations.media.Schema
+import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.tags.Tag
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpHeaders
@@ -17,7 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 import java.time.Duration
 
-@Tag(name = "토큰 재발급")
+@Tag(name = "토큰 관리")
 @RestController
 class ReissueController(
     private val jwtUtil: JWTUtil,
@@ -72,8 +75,25 @@ class ReissueController(
         return ResponseEntity.ok().body("")
     }
 
+    @Operation(
+        summary = "테스트용 토큰 발급",
+        description = "테스트를 위한 Access Token과 Refresh Token을 발급합니다.",
+        responses = [
+            ApiResponse(
+                responseCode = "200",
+                description = "토큰 발급 성공",
+                headers = [
+                    Header(
+                        name = HttpHeaders.AUTHORIZATION,
+                        description = "Access Token (Bearer 형식)",
+                        schema = Schema(type = "string")
+                    )
+                ]
+            )
+        ]
+    )
     @PostMapping("/test-reissue")
-    fun testReIssue(
+    fun testReissue(
         response: HttpServletResponse
     ): ResponseEntity<Void> {
 
