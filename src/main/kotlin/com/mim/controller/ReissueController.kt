@@ -1,5 +1,6 @@
 package com.mim.controller
 
+import com.mim.entity.Role
 import com.mim.jwt.CookieUtil
 import com.mim.jwt.JWTType
 import com.mim.jwt.JWTUtil
@@ -12,19 +13,19 @@ import jakarta.servlet.http.HttpServletResponse
 import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.CookieValue
-import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RestController
 import java.time.Duration
 
 @Tag(name = "토큰 재발급")
 @RestController
-class ReissueController (
+class ReissueController(
     private val jwtUtil: JWTUtil,
     private val refreshRepository: RefreshRepository
 ) {
 
     @Operation(summary = "리프레시 토큰으로 새 토큰 발급")
-    @GetMapping("/reissue")
+    @PostMapping("/reissue")
     fun reissue(
         @Parameter(description = "리프레시 토큰")
         @CookieValue(name = "refresh_token") refreshToken: String,
@@ -55,18 +56,45 @@ class ReissueController (
 
         val tokenDuration = Duration.ofDays(1)
         val newRefreshToken = jwtUtil.createJwt(JWTType.REFRESH_TOKEN, username, role, tokenDuration)
-        response.addCookie(CookieUtil.createCookie(
-            name = JWTType.REFRESH_TOKEN.label,
-            value = newRefreshToken,
-            maxAge = tokenDuration,
-            isSecure = false // 운영때는 true
-        ))
+        response.addCookie(
+            CookieUtil.createCookie(
+                name = JWTType.REFRESH_TOKEN.label,
+                value = newRefreshToken,
+                maxAge = tokenDuration,
+                isSecure = false // 운영때는 true
+            )
+        )
 
         // TODO : 작업 필요
         refreshRepository.deleteByRefreshToken(refreshToken)
         // refreshRepository.save(newRefreshToken)
 
         return ResponseEntity.ok().body("")
+    }
+
+    @PostMapping("/test-reissue")
+    fun testReIssue(
+        response: HttpServletResponse
+    ): ResponseEntity<Void> {
+
+        val username = "admin"
+        val role = Role.USER
+
+        val newAccessToken = jwtUtil.createJwt(JWTType.ACCESS_TOKEN, username, role)
+        response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer $newAccessToken")
+
+        val tokenDuration = Duration.ofDays(1)
+        val newRefreshToken = jwtUtil.createJwt(JWTType.REFRESH_TOKEN, username, role, tokenDuration)
+        response.addCookie(
+            CookieUtil.createCookie(
+                name = JWTType.REFRESH_TOKEN.label,
+                value = newRefreshToken,
+                maxAge = tokenDuration,
+                isSecure = false // 운영때는 true
+            )
+        )
+
+        return ResponseEntity.ok().build()
     }
 
 }

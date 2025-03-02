@@ -1,0 +1,27 @@
+### 회원가입
+
+POST http://localhost:8080/test-reissue
+Content-Type: application/json
+
+
+
+### 로그인
+
+GET http://localhost:8080/user
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ0eXBlIjoiYWNjZXNzX3Rva2VuIiwidXNlcm5hbWUiOiJhZG1pbiIsInJvbGUiOiJVU0VSIiwiaWF0IjoxNzQwODg2NDMyLCJleHAiOjE3NDA5NzI4MzJ9.mrgzdMahFqUtyQCITLBFo0aHlduZV1d_eDgGT0xBeU4
+Content-Type: application/json
+
+
+### 사용자 페이지
+
+GET http://localhost:8080/member
+
+
+### 관리자 페이지
+
+GET http://localhost:8080/admin
+
+
+### 메인 페이지
+
+GET http://localhost:8080
