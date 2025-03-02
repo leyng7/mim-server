@@ -32,6 +32,13 @@ class UserService (
             dateOfBirth = request.dateOfBirth,
             gender = request.gender
         )
+
+    }
+
+    @Transactional
+    fun changeToUser(username: String) {
+        val userEntity = getUserEntity(username)
+        userEntity.changeToUser()
     }
 
 }
