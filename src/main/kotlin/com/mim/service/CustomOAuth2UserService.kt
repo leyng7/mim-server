@@ -18,8 +18,6 @@ class CustomOAuth2UserService(
     override fun loadUser(userRequest: OAuth2UserRequest): OAuth2User {
         val oAuth2User = super.loadUser(userRequest)
 
-        println(oAuth2User)
-
         val registrationId = userRequest.clientRegistration.registrationId
         val oAuth2Response = when (registrationId) {
             "naver" -> NaverResponse(oAuth2User.attributes)
@@ -36,6 +34,7 @@ class CustomOAuth2UserService(
         )
 
         userRepository.save(userEntity)
+
         return CustomOAuth2User(User(userEntity))
     }
 }

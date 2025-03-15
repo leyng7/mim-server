@@ -27,6 +27,18 @@ class TestDataInitializer {
                     role = Role.USER
                 )
             )
+
+            userRepository.save(
+                UserEntity(
+                    username = "admin2",
+                    name = "admin",
+                    nickname = "admin",
+                    mbti = MBTI.ESTJ,
+                    dateOfBirth = LocalDate.of(1992, 8, 12),
+                    gender = Gender.MALE,
+                    role = Role.USER
+                )
+            )
         }
     }
 

@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <title>랜덤 채팅 테스트</title>
+        <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+
+            .container {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .connection-panel {
+                padding: 15px;
+                background-color: #f0f0f0;
+                border-radius: 5px;
+            }
+
+            .matching-panel {
+                padding: 15px;
+                background-color: #e0f0ff;
+                border-radius: 5px;
+            }
+
+            .chat-panel {
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                padding: 15px;
+            }
+
+            .chat-messages {
+                height: 300px;
+                border: 1px solid #ccc;
+                overflow-y: auto;
+                margin-bottom: 10px;
+                padding: 10px;
+                background-color: #f9f9f9;
+            }
+
+            .message-input {
+                display: flex;
+                gap: 10px;
+            }
+
+            input, button {
+                padding: 8px;
+            }
+
+            input {
+                flex-grow: 1;
+            }
+
+            .log {
+                color: #666;
+                font-style: italic;
+            }
+
+            .user-message {
+                color: blue;
+            }
+
+            .received-message {
+                color: green;
+            }
+
+            .system-message {
+                color: #e74c3c;
+                font-weight: bold;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>랜덤 채��� 테스트</h1>
+        <div class="container">
+            <div class="connection-panel">
+                <h2>연결 설정</h2>
+                <div>
+                    <label for="serverUrl">서버 URL:</label>
+                    <input type="text" id="serverUrl" value="/ws-chat"/>
+                </div>
+                <div>
+                    <label for="userId">사용자 ID:</label>
+                    <input type="text" id="userId" value="user_" />
+                    <button id="generateIdBtn">랜덤 생성</button>
+                </div>
+                <div>
+                    <label for="token">JWT 토큰:</label>
+                    <input type="text" id="token" placeholder="Bearer eyJhbGciOiJ..." style="width:300px;"/>
+                </div>
+                <div style="margin-top: 10px;">
+                    <button id="connectBtn">연결</button>
+                    <button id="disconnectBtn" disabled>연결 해제</button>
+                </div>
+            </div>
+
+            <div class="matching-panel">
+                <h2>랜덤 매칭</h2>
+                <div>
+                    <p id="matchStatus">연결 대기 중...</p>
+                    <p id="partnerInfo"></p>
+                </div>
+                <div>
+                    <button id="requestMatchBtn" disabled>매칭 요청</button>
+                    <button id="cancelMatchBtn" disabled>매칭 취소</button>
+                </div>
+            </div>
+
+            <div class="chat-panel">
+                <h2>채팅</h2>
+                <div class="chat-messages" id="messages"></div>
+                <div class="message-input">
+                    <input type="text" id="messageInput" placeholder="메시지를 입력하세요" disabled/>
+                    <button id="sendBtn" disabled>전송</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+          let stompClient = null;
+          let roomId = null;
+          let partnerId = null;
+          let currentUserId = null;
+          let matchRequested = false;
+
+          // DOM 요소 참조
+          const connectBtn = document.getElementById('connectBtn');
+          const disconnectBtn = document.getElementById('disconnectBtn');
+          const requestMatchBtn = document.getElementById('requestMatchBtn');
+          const cancelMatchBtn = document.getElementById('cancelMatchBtn');
+          const sendBtn = document.getElementById('sendBtn');
+          const messageInput = document.getElementById('messageInput');
+          const messagesContainer = document.getElementById('messages');
+          const serverUrlInput = document.getElementById('serverUrl');
+          const tokenInput = document.getElementById('token');
+          const userIdInput = document.getElementById('userId');
+          const generateIdBtn = document.getElementById('generateIdBtn');
+          const matchStatus = document.getElementById('matchStatus');
+          const partnerInfo = document.getElementById('partnerInfo');
+
+          // 랜덤 ID 생성
+          generateIdBtn.addEventListener('click', function() {
+              userIdInput.value = "user_" + Date.now().toString().slice(-6);
+          });
+
+          // 페이지 로드 시 랜덤 ID 생성
+          window.onload = function() {
+              userIdInput.value = "user_" + Date.now().toString().slice(-6);
+          };
+
+          // 메시지 추가 함수
+          function addMessage(message, type) {
+            const messageElement = document.createElement('div');
+            messageElement.className = type;
+            messageElement.textContent = message;
+            messagesContainer.appendChild(messageElement);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }
+
+          // 연결 버튼 클릭
+          connectBtn.addEventListener('click', function () {
+            currentUserId = userIdInput.value;
+
+            if (!currentUserId || !serverUrlInput.value) {
+              alert('서버 URL과 사용자 ID를 모두 입력해주세요');
+              return;
+            }
+
+            // 연결 시작
+            addMessage(`서버에 연결 중...`, 'log');
+
+            const socket = new SockJS(serverUrlInput.value);
+            stompClient = Stomp.over(socket);
+
+            // 연결 헤더 설정
+            const headers = {};
+            if (tokenInput.value) {
+              headers['Authorization'] = tokenInput.value;
+            }
+
+            // STOMP 연결
+            stompClient.connect(headers, function (frame) {
+              console.log(frame);
+              addMessage(`연결 성공: ${frame}`, 'log');
+              matchStatus.textContent = "연결 성공: 매칭 대기 중";
+
+              // 매칭 결과 구독
+              stompClient.subscribe('/user/queue/match', function (message) {
+                console.log(message);
+                const matchResult = JSON.parse(message.body);
+                roomId = matchResult.roomId;
+                partnerId = matchResult.partnerId;
+
+                matchStatus.textContent = "매칭 완료!";
+                partnerInfo.textContent = `상대방: ${partnerId}`;
+                addMessage(`매칭 성공! 상대방 ID: ${partnerId}, 채팅방 ID: ${roomId}`, 'system-message');
+
+                // 채팅방 구독
+                subscribeToRoom(roomId);
+
+                // 매칭 버튼 비활성화, 채팅 활성화
+                requestMatchBtn.disabled = true;
+                cancelMatchBtn.disabled = true;
+                messageInput.disabled = false;
+                sendBtn.disabled = false;
+
+                matchRequested = false;
+              });
+
+              // UI 업데이트
+              connectBtn.disabled = true;
+              disconnectBtn.disabled = false;
+              requestMatchBtn.disabled = false;
+              userIdInput.disabled = true;
+              generateIdBtn.disabled = true;
+
+            }, function (error) {
+              addMessage(`연결 실패: ${error}`, 'log');
+              matchStatus.textContent = "연결 실패";
+            });
+          });
+
+          // 채팅방 구독 함수
+          function subscribeToRoom(roomId) {
+            stompClient.subscribe(`/topic/chat.${roomId}`, function (message) {
+              const chatMessage = JSON.parse(message.body);
+
+              // 내가 보낸 메시지는 이미 표시했으므로 무시
+              if (chatMessage.senderId === currentUserId) {
+                return;
+              }
+
+              addMessage(`${chatMessage.senderId}: ${chatMessage.content}`, 'received-message');
+            });
+          }
+
+          // 매칭 요청 버튼 클릭
+          requestMatchBtn.addEventListener('click', function () {
+            if (!stompClient) return;
+
+            // 서버에 랜덤 매칭 요청 - 실제로는 API를 호출해야 함
+            fetch('/chat/random-match', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': tokenInput.value || ''
+              },
+              body: JSON.stringify({ userId: currentUserId })
+            })
+            .then(response => {
+              if (response.ok) {
+                matchStatus.textContent = "매칭 요청 중...";
+                addMessage("랜덤 매칭 요청을 보냈습니다. 상대방을 기다리는 중...", 'system-message');
+                requestMatchBtn.disabled = true;
+                cancelMatchBtn.disabled = false;
+                matchRequested = true;
+              } else {
+                throw new Error('매칭 요청 실패');
+              }
+            })
+            .catch(error => {
+              addMessage(`매칭 요청 실패: ${error.message}`, 'log');
+              matchStatus.textContent = "매칭 요청 실패";
+            });
+          });
+
+          // 매칭 취소 버튼 클릭
+          cancelMatchBtn.addEventListener('click', function () {
+            if (!stompClient || !matchRequested) return;
+
+            // 서버에 매칭 취소 요청
+            fetch('/chat/cancel-match', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': tokenInput.value || ''
+              },
+              body: JSON.stringify({ userId: currentUserId })
+            })
+            .then(response => {
+              if (response.ok) {
+                matchStatus.textContent = "매칭 취소됨";
+                addMessage("랜덤 매칭이 취소되었습니다.", 'system-message');
+                requestMatchBtn.disabled = false;
+                cancelMatchBtn.disabled = true;
+                matchRequested = false;
+              } else {
+                throw new Error('매칭 취소 실패');
+              }
+            })
+            .catch(error => {
+              addMessage(`매칭 취소 실패: ${error.message}`, 'log');
+            });
+          });
+
+          // 연결 해제 버튼 클릭
+          disconnectBtn.addEventListener('click', function () {
+            if (stompClient) {
+              stompClient.disconnect();
+              stompClient = null;
+
+              // UI 업데이트
+              addMessage('연결이 해제되었습니다.', 'log');
+              connectBtn.disabled = false;
+              disconnectBtn.disabled = true;
+              requestMatchBtn.disabled = true;
+              cancelMatchBtn.disabled = true;
+              messageInput.disabled = true;
+              sendBtn.disabled = true;
+              userIdInput.disabled = false;
+              generateIdBtn.disabled = false;
+
+              matchStatus.textContent = "연결 대기 중...";
+              partnerInfo.textContent = "";
+              roomId = null;
+              partnerId = null;
+              matchRequested = false;
+            }
+          });
+
+          // 메시지 전송 버튼 클릭
+          sendBtn.addEventListener('click', function () {
+            sendMessage();
+          });
+
+          // 엔터키로 메시지 전송
+          messageInput.addEventListener('keypress', function (event) {
+            if (event.key === 'Enter') {
+              sendMessage();
+            }
+          });
+
+          // 메시지 전송 함수
+          function sendMessage() {
+            if (!stompClient || !messageInput.value.trim() || !roomId) return;
+
+            const message = messageInput.value;
+            const chatMessage = {
+              roomId: roomId,
+              senderId: currentUserId,
+              content: message,
+              timestamp: Date.now()
+            };
+
+            addMessage(`나: ${message}`, 'user-message');
+
+            // JSON 객체로 변환해서 발송
+            stompClient.send('/publish/chat.send', {}, JSON.stringify(chatMessage));
+
+            messageInput.value = '';
+            messageInput.focus();
+          }
+        </script>
+    </body>
+</html>

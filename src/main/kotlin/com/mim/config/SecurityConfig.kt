@@ -5,13 +5,17 @@ import com.mim.jwt.JWTUtil
 import com.mim.oauth2.CustomSuccessHandler
 import com.mim.service.CustomOAuth2UserService
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.annotation.web.builders.WebSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher
 import org.springframework.web.cors.CorsConfiguration
 
 @Configuration
@@ -23,6 +27,17 @@ class SecurityConfig(
     @Value("\${cors.allowed-origin}")
     private val allowedOrigin: String
 ) {
+
+    @Bean
+    fun ignoringCustomizer(): WebSecurityCustomizer {
+        return WebSecurityCustomizer { web: WebSecurity ->
+            web.ignoring()
+                .requestMatchers(
+                    PathRequest.toStaticResources().atCommonLocations(),
+                    AntPathRequestMatcher("/favicon.ico")
+                )
+        }
+    }
 
     @Bean
     @Throws(Exception::class)
@@ -61,7 +76,11 @@ class SecurityConfig(
                         "/swagger-ui.html",
                         "/v3/api-docs/**",
                         "/swagger-resources/**",
-                        "/webjars/**"
+                        "/webjars/**",
+                        "/chat-test.html",
+                        "/chat-test2.html",
+                        "/favicon.ico",
+                        "/ws-chat/**",
                     ).permitAll()
                     .requestMatchers("my").hasRole("USER")
                     .anyRequest().authenticated()

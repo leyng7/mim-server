@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8">
+        <title>STOMP 웹소켓 테스트</title>
+        <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                max-width: 800px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+
+            .container {
+                display: flex;
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .connection-panel {
+                padding: 15px;
+                background-color: #f0f0f0;
+                border-radius: 5px;
+            }
+
+            .chat-panel {
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                padding: 15px;
+            }
+
+            .chat-messages {
+                height: 300px;
+                border: 1px solid #ccc;
+                overflow-y: auto;
+                margin-bottom: 10px;
+                padding: 10px;
+                background-color: #f9f9f9;
+            }
+
+            .message-input {
+                display: flex;
+                gap: 10px;
+            }
+
+            input, button {
+                padding: 8px;
+            }
+
+            input {
+                flex-grow: 1;
+            }
+
+            .log {
+                color: #666;
+                font-style: italic;
+            }
+
+            .user-message {
+                color: blue;
+            }
+
+            .received-message {
+                color: green;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>STOMP 웹소켓 채팅 테스트</h1>
+        <div class="container">
+            <div class="connection-panel">
+                <h2>연결 설정</h2>
+                <div>
+                    <label for="serverUrl">서버 URL:</label>
+                    <input type="text" id="serverUrl" value="/ws-chat"/>
+                </div>
+                <div>
+                    <label for="roomId">채팅방 ID:</label>
+                    <input type="text" id="roomId" value="123"/>
+                </div>
+                <div>
+                    <label for="token">JWT 토큰:</label>
+                    <input type="text" id="token" placeholder="Bearer eyJhbGciOiJ..." style="width:300px;"/>
+                </div>
+                <div style="margin-top: 10px;">
+                    <button id="connectBtn">연결</button>
+                    <button id="disconnectBtn" disabled>연결 해제</button>
+                </div>
+            </div>
+
+            <div class="chat-panel">
+                <h2>채팅</h2>
+                <div class="chat-messages" id="messages"></div>
+                <div class="message-input">
+                    <input type="text" id="messageInput" placeholder="메시지를 입력하세요" disabled/>
+                    <button id="sendBtn" disabled>전송</button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+          let stompClient = null;
+          let roomId = null;
+
+          // DOM 요소 참조
+          const connectBtn = document.getElementById('connectBtn');
+          const disconnectBtn = document.getElementById('disconnectBtn');
+          const sendBtn = document.getElementById('sendBtn');
+          const messageInput = document.getElementById('messageInput');
+          const messagesContainer = document.getElementById('messages');
+          const roomIdInput = document.getElementById('roomId');
+          const serverUrlInput = document.getElementById('serverUrl');
+          const tokenInput = document.getElementById('token');
+
+          // 메시지 추가 함수
+          function addMessage(message, type) {
+            const messageElement = document.createElement('div');
+            messageElement.className = type;
+            messageElement.textContent = message;
+            messagesContainer.appendChild(messageElement);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }
+
+          // 연결 버튼 클릭
+          connectBtn.addEventListener('click', function () {
+            roomId = roomIdInput.value;
+            if (!roomId || !serverUrlInput.value) {
+              alert('서버 URL과 채팅방 ID를 모두 입력해주세요');
+              return;
+            }
+
+            // 연결 시작
+            addMessage(`서버에 연결 중...`, 'log');
+
+            const socket = new SockJS(serverUrlInput.value);
+            stompClient = Stomp.over(socket);
+
+            // 연결 헤더 설정
+            const headers = {};
+            if (tokenInput.value) {
+              headers['Authorization'] = tokenInput.value;
+            }
+
+            // STOMP 연결
+            stompClient.connect(headers, function (frame) {
+              addMessage(`연결 성공: ${frame}`, 'log');
+
+              // 채팅방 구독
+              stompClient.subscribe(`/topic/${roomId}`, function (message) {
+                try {
+                  const messageObj = JSON.parse(message.body);
+
+                  // 내가 보낸 메시지는 표시하지 않음
+                  if (messageObj.clientId === clientId) {
+                    return;
+                  }
+
+                  addMessage(`수신: ${messageObj.content}`, 'received-message');
+                } catch (e) {
+                  // JSON 파싱 실패 시 기존 방식으로 표시
+                  addMessage(`수신: ${message.body}`, 'received-message');
+                }
+              });
+
+              // UI 업데이트
+              connectBtn.disabled = true;
+              disconnectBtn.disabled = false;
+              messageInput.disabled = false;
+              sendBtn.disabled = false;
+
+            }, function (error) {
+              addMessage(`연결 실패: ${error}`, 'log');
+            });
+          });
+
+          // 연결 해제 버튼 클릭
+          disconnectBtn.addEventListener('click', function () {
+            if (stompClient) {
+              stompClient.disconnect();
+              stompClient = null;
+
+              // UI 업데이트
+              addMessage('연결이 해제되었습니다.', 'log');
+              connectBtn.disabled = false;
+              disconnectBtn.disabled = true;
+              messageInput.disabled = true;
+              sendBtn.disabled = true;
+            }
+          });
+
+          // 메시지 전송 버튼 클릭
+          sendBtn.addEventListener('click', function () {
+            sendMessage();
+          });
+
+          // 엔터키로 메시지 전송
+          messageInput.addEventListener('keypress', function (event) {
+            if (event.key === 'Enter') {
+              sendMessage();
+            }
+          });
+
+          let clientId = Date.now() + Math.random().toString(36).substring(2, 8);
+
+          // 메시지 전송 함수
+          function sendMessage() {
+            if (!stompClient || !messageInput.value.trim()) return;
+
+            const message = messageInput.value;
+            const messageObj = {
+              clientId: clientId,
+              content: message,
+              sendTime: new Date().toISOString()
+            };
+
+            addMessage(`전송: ${message}`, 'user-message');
+
+            // JSON 객체로 변환해서 발송
+            stompClient.send(`/publish/${roomId}`, {}, JSON.stringify(messageObj));
+
+            messageInput.value = '';
+            messageInput.focus();
+          }
+        </script>
+    </body>
+</html>

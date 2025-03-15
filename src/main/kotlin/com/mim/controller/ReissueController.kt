@@ -17,6 +17,7 @@ import org.springframework.http.HttpHeaders
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.CookieValue
 import org.springframework.web.bind.annotation.PostMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.Duration
 
@@ -94,10 +95,11 @@ class ReissueController(
     )
     @PostMapping("/test-reissue")
     fun testReissue(
+        @Parameter(description = "테스트 아이디(admin, admin1)")
+        @RequestParam username: String,
         response: HttpServletResponse
     ): ResponseEntity<Void> {
 
-        val username = "admin"
         val role = Role.USER
 
         val newAccessToken = jwtUtil.createJwt(JWTType.ACCESS_TOKEN, username, role)
