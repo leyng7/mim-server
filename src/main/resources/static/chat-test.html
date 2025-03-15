@@ -177,7 +177,7 @@
             // 연결 시작
             addMessage(`서버에 연결 중...`, 'log');
 
-            const socket = new SockJS(serverUrlInput.value);
+            const socket = new SockJS(serverUrlInput.value + '?Authorization=' + tokenInput.value);
             stompClient = Stomp.over(socket);
 
             // 연결 헤더 설정

@@ -2,8 +2,10 @@ package com.mim.domain.chat
 
 import org.springframework.http.server.ServerHttpRequest
 import org.springframework.http.server.ServerHttpResponse
+import org.springframework.http.server.ServletServerHttpRequest
 import org.springframework.web.socket.WebSocketHandler
 import org.springframework.web.socket.server.HandshakeInterceptor
+
 
 class JwtHandshakeInterceptor : HandshakeInterceptor {
     override fun beforeHandshake(
@@ -12,12 +14,13 @@ class JwtHandshakeInterceptor : HandshakeInterceptor {
         wsHandler: WebSocketHandler,
         attributes: MutableMap<String, Any>
     ): Boolean {
-        val headers = request.headers
-        val token = headers.getFirst("Authorization")?.removePrefix("Bearer ")
+        val servletRequest = (request as ServletServerHttpRequest).servletRequest
 
-        if (token != null) {
-            attributes["jwtToken"] = token // ✅ WebSocket 속성에 저장
-        }
+//        val token = headers.getFirst("Authorization")?.removePrefix("Bearer ")
+//
+//        if (token != null) {
+//            attributes["jwtToken"] = token // ✅ WebSocket 속성에 저장
+//        }
 
         return true
     }

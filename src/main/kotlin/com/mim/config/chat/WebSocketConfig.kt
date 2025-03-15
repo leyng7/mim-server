@@ -1,7 +1,6 @@
 package com.mim.config.chat
 
 import com.mim.domain.chat.CustomHandshakeHandler
-import com.mim.domain.chat.JwtHandshakeInterceptor
 import org.springframework.context.annotation.Configuration
 import org.springframework.messaging.simp.config.ChannelRegistration
 import org.springframework.messaging.simp.config.MessageBrokerRegistry
@@ -24,7 +23,6 @@ class WebSocketConfig(
 
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {
         registry.addEndpoint("/ws-chat")
-            .addInterceptors(JwtHandshakeInterceptor())
             .setHandshakeHandler(customHandshakeHandler)
             .setAllowedOriginPatterns("*")
             .withSockJS()
