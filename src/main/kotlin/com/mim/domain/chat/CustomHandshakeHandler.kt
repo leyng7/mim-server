@@ -25,21 +25,35 @@ class CustomHandshakeHandler(
         attributes: MutableMap<String, Any>
     ): Principal? {
         val servletRequest = (request as ServletServerHttpRequest).servletRequest
-        val accessToken = servletRequest.getParameter("Authorization")?.replace("Bearer ", "") ?: return null
+
+        val cookies = servletRequest.cookies
+
+        var refreshToken = ""
+
+        cookies.forEach {
+            if (it.name == "refresh_token") {
+                refreshToken = it.value
+            }
+        }
+
+        if (refreshToken.isBlank()) {
+            println("token null")
+            return null
+        }
 
         try {
-            jwtUtil.isExpired(accessToken)
+            jwtUtil.isExpired(refreshToken)
         } catch (e: ExpiredJwtException) {
             println("token expired")
         }
 
-        val type = jwtUtil.getType(accessToken)
-        if (type != JWTType.ACCESS_TOKEN) {
-            println("invalid access token")
+        val type = jwtUtil.getType(refreshToken)
+        if (type != JWTType.REFRESH_TOKEN) {
+            println("invalid token type")
         }
 
-        val username = jwtUtil.getUsername(accessToken)
-        val role = jwtUtil.getRole(accessToken)
+        val username = jwtUtil.getUsername(refreshToken)
+        val role = jwtUtil.getRole(refreshToken)
 
         val user = User(username = username, name = "", role = role)
         val customOAuth2User = CustomOAuth2User(user)

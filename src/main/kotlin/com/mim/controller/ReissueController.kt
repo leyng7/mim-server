@@ -100,7 +100,7 @@ class ReissueController(
         response: HttpServletResponse
     ): ResponseEntity<Void> {
 
-        val role = Role.USER
+         val role = Role.USER
 
         val newAccessToken = jwtUtil.createJwt(JWTType.ACCESS_TOKEN, username, role)
         response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer $newAccessToken")
