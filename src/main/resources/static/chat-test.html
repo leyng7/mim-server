@@ -188,7 +188,6 @@
 
             // STOMP 연결
             stompClient.connect(headers, function (frame) {
-              console.log(frame);
               addMessage(`연결 성공: ${frame}`, 'log');
               matchStatus.textContent = "연결 성공: 매칭 대기 중";
 
