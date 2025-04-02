@@ -1,6 +1,7 @@
 package com.mim.modules.member.jwt
 
 import com.mim.modules.member.domain.Role
+import com.mim.modules.member.dto.User
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import org.springframework.beans.factory.annotation.Value
@@ -18,6 +19,16 @@ class JWTUtil(
 ) {
 
     private val secretKey = SecretKeySpec(secret.toByteArray(StandardCharsets.UTF_8), Jwts.SIG.HS256.key().build().algorithm)
+
+    fun getUser(token: String): User {
+        val parseToken = parseToken(token)
+        return User(
+            id = parseToken.get("id", Number::class.java).toLong(),
+            username = parseToken.get("username", String::class.java),
+            name = "",
+            role = Role.valueOf(parseToken.get("role", String::class.java))
+        )
+    }
 
     fun getUsername(token: String): String {
         return parseToken(token).get("username", String::class.java)
@@ -37,15 +48,15 @@ class JWTUtil(
 
     fun createJwt(
         type: JWTType,
-        username: String,
-        role: Role,
+        user: User,
         duration: Duration = Duration.ofDays(1)
     ): String {
         val now = Instant.now()
         return Jwts.builder()
             .claim("type", type.label)
-            .claim("username", username)
-            .claim("role", role.name)
+            .claim("id", user.id)
+            .claim("username", user.username)
+            .claim("role", user.role.name)
             .issuedAt(Date.from(now))
             .expiration(Date.from(now.plus(duration)))
             .signWith(secretKey)

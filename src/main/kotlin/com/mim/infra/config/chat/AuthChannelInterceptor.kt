@@ -38,7 +38,6 @@ class AuthChannelInterceptor(
             }
 
             val username = jwtUtil.getUsername(accessToken)
-            val role = jwtUtil.getRole(accessToken)
 
             headerAccessor.user = StompPrincipal(username)
         }

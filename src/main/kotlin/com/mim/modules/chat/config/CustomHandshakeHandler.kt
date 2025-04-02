@@ -1,7 +1,6 @@
 package com.mim.modules.chat.config
 
 import com.mim.modules.member.dto.CustomOAuth2User
-import com.mim.modules.member.dto.User
 import com.mim.modules.member.jwt.JWTType
 import com.mim.modules.member.jwt.JWTUtil
 import io.jsonwebtoken.ExpiredJwtException
@@ -52,10 +51,7 @@ class CustomHandshakeHandler(
             println("invalid token type")
         }
 
-        val username = jwtUtil.getUsername(refreshToken)
-        val role = jwtUtil.getRole(refreshToken)
-
-        val user = User(username = username, name = "", role = role)
+        val user = jwtUtil.getUser(refreshToken)
         val customOAuth2User = CustomOAuth2User(user)
 
         return UsernamePasswordAuthenticationToken(customOAuth2User, null, customOAuth2User.authorities)

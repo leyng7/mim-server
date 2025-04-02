@@ -1,7 +1,6 @@
 package com.mim.modules.member.jwt
 
 import com.mim.modules.member.dto.CustomOAuth2User
-import com.mim.modules.member.dto.User
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -38,10 +37,7 @@ class JWTCookieFilter(
             return
         }
 
-        val username = jwtUtil.getUsername(token)
-        val role = jwtUtil.getRole(token)
-
-        val user = User(username = username, name = "", role = role)
+        val user = jwtUtil.getUser(token)
         val customOAuth2User = CustomOAuth2User(user)
 
         val authenticationToken = UsernamePasswordAuthenticationToken(customOAuth2User, null, customOAuth2User.authorities)

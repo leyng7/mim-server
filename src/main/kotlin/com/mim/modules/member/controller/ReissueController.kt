@@ -1,6 +1,7 @@
 package com.mim.modules.member.controller
 
 import com.mim.modules.member.domain.Role
+import com.mim.modules.member.dto.User
 import com.mim.modules.member.jwt.CookieUtil
 import com.mim.modules.member.jwt.JWTType
 import com.mim.modules.member.jwt.JWTUtil
@@ -52,14 +53,18 @@ class ReissueController(
             return ResponseEntity.badRequest().body("no refresh found")
         }
 
-        val username = jwtUtil.getUsername(refreshToken)
-        val role = jwtUtil.getRole(refreshToken)
-
-        val newAccessToken = jwtUtil.createJwt(JWTType.ACCESS_TOKEN, username, role)
+        val newAccessToken = jwtUtil.createJwt(
+            type = JWTType.ACCESS_TOKEN,
+            user = jwtUtil.getUser(refreshToken)
+        )
         response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer $newAccessToken")
 
         val tokenDuration = Duration.ofDays(1)
-        val newRefreshToken = jwtUtil.createJwt(JWTType.REFRESH_TOKEN, username, role, tokenDuration)
+        val newRefreshToken = jwtUtil.createJwt(
+            type = JWTType.REFRESH_TOKEN,
+            user = jwtUtil.getUser(refreshToken),
+            duration = tokenDuration
+        )
         response.addCookie(
             CookieUtil.createCookie(
                 name = JWTType.REFRESH_TOKEN.label,
@@ -100,13 +105,20 @@ class ReissueController(
         response: HttpServletResponse
     ): ResponseEntity<Void> {
 
-         val role = Role.USER
+        val role = Role.USER
 
-        val newAccessToken = jwtUtil.createJwt(JWTType.ACCESS_TOKEN, username, role)
+        val newAccessToken = jwtUtil.createJwt(
+            type = JWTType.ACCESS_TOKEN,
+            user = User(id = 1, username = username, role = role, name = "")
+        )
         response.setHeader(HttpHeaders.AUTHORIZATION, "Bearer $newAccessToken")
 
         val tokenDuration = Duration.ofDays(1)
-        val newRefreshToken = jwtUtil.createJwt(JWTType.REFRESH_TOKEN, username, role, tokenDuration)
+        val newRefreshToken = jwtUtil.createJwt(
+            type = JWTType.REFRESH_TOKEN,
+            user = User(id = 1, username = username, role = role, name = ""),
+            duration = tokenDuration
+        )
         response.addCookie(
             CookieUtil.createCookie(
                 name = JWTType.REFRESH_TOKEN.label,

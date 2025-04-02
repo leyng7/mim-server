@@ -1,5 +1,6 @@
 package com.mim.modules.chat.service
 
+import com.mim.modules.member.dto.User
 import org.springframework.stereotype.Service
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -7,14 +8,15 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 @Service
 class ChatMatchingService(
-    private val webSocketService: WebSocketService
+    private val webSocketService: WebSocketService,
+    private val chatService: ChatService
 ) {
 
-    private val waitingQueue = ConcurrentLinkedQueue<ChatUser>()
+    private val waitingQueue = ConcurrentLinkedQueue<User>()
     private val userMatches = ConcurrentHashMap<String, String>() // username -> chatRoomId
 
     // 대기열에 사용자 추가
-    fun addToWaitingQueue(user: ChatUser) {
+    fun addToWaitingQueue(user: User) {
         // 이미 대기 중인지 확인
 //        if (waitingQueue.any { it.username == user.username }) {
 //            return
@@ -40,13 +42,17 @@ class ChatMatchingService(
 
                 if (user1 != null && user2 != null) {
                     createChatRoom(user1, user2)
+                    chatService.getOrCreatePrivateRoom(
+                        userId = user1.id,
+                        otherMemberId = user2.id
+                    )
                 }
             }
         }
     }
 
     // 채팅방 생성 및 사용자 초대
-    private fun createChatRoom(user1: ChatUser, user2: ChatUser) {
+    private fun createChatRoom(user1: User, user2: User) {
         println("매칭 성공: ${user1.username} - ${user2.username}")
         val roomId = UUID.randomUUID().toString()
 
@@ -57,5 +63,4 @@ class ChatMatchingService(
         webSocketService.notifyMatching(user1.username, user2.username, roomId)
     }
 
-    data class ChatUser(val username: String)
 }

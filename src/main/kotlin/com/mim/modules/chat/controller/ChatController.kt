@@ -16,11 +16,10 @@ import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
-import java.security.Principal
 
 @Tag(name = "랜덤 채팅")
 @RestController
-@RequestMapping("/chat")
+@RequestMapping("/chats")
 class ChatController(
     private val chatMatchingService: ChatMatchingService
 ) {
@@ -48,8 +47,10 @@ class ChatController(
         ]
     )
     @PostMapping("/random-match")
-    fun requestRandomMatch(@LoginUser user: User, principal: Principal): ResponseEntity<Void> {
-        chatMatchingService.addToWaitingQueue(ChatMatchingService.ChatUser(user.username))
+    fun requestRandomMatch(
+        @LoginUser user: User
+    ): ResponseEntity<Void> {
+        chatMatchingService.addToWaitingQueue(user)
         return ResponseEntity.ok().build()
     }
 

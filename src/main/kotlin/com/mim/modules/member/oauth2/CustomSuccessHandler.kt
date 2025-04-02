@@ -26,8 +26,7 @@ class CustomSuccessHandler(
 
         val token = jwtUtil.createJwt(
             type = JWTType.REFRESH_TOKEN,
-            username = user.username,
-            role = user.role,
+            user = user,
             duration = tokenDuration
         )
 

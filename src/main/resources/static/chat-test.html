@@ -246,7 +246,7 @@
             if (!stompClient) return;
 
             // 서버에 랜덤 매칭 요청 - 실제로는 API를 호출해야 함
-            fetch('/chat/random-match', {
+            fetch('/chats/random-match', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -276,7 +276,7 @@
             if (!stompClient || !matchRequested) return;
 
             // 서버에 매칭 취소 요청
-            fetch('/chat/cancel-match', {
+            fetch('/chats/cancel-match', {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

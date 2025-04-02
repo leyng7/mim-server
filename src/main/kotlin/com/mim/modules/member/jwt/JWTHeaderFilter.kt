@@ -1,7 +1,6 @@
 package com.mim.modules.member.jwt
 
 import com.mim.modules.member.dto.CustomOAuth2User
-import com.mim.modules.member.dto.User
 import io.jsonwebtoken.ExpiredJwtException
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
@@ -40,10 +39,7 @@ class JWTHeaderFilter(
             return
         }
 
-        val username = jwtUtil.getUsername(accessToken)
-        val role = jwtUtil.getRole(accessToken)
-
-        val user = User(username = username, name = "", role = role)
+        val user = jwtUtil.getUser(accessToken)
         val customOAuth2User = CustomOAuth2User(user)
 
         val authenticationToken = UsernamePasswordAuthenticationToken(customOAuth2User, null, customOAuth2User.authorities)

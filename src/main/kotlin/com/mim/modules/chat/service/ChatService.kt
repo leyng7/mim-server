@@ -13,6 +13,7 @@ import com.mim.modules.chat.repository.ChatParticipantRepository
 import com.mim.modules.chat.repository.ChatRoomRepository
 import com.mim.modules.chat.repository.ReadStatusRepository
 import jakarta.persistence.EntityNotFoundException
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -26,7 +27,7 @@ class ChatService(
     private val readStatusRepository: ReadStatusRepository
 ) {
     fun saveMessage(roomId: Long, command: ChatMessageCommand) {
-        val chatRoom = chatRoomRepository.findById(roomId).orElseThrow { EntityNotFoundException("room cannot be found") }
+        val chatRoom = chatRoomRepository.findByIdOrNull(roomId) ?: throw EntityNotFoundException("room cannot be found")
 
         val chatMessage = ChatMessage(
             chatRoom = chatRoom,
@@ -129,10 +130,6 @@ class ChatService(
     }
 
     fun getOrCreatePrivateRoom(userId: Long, otherMemberId: Long): Long {
-
-        chatParticipantRepository.findExistingPrivateRoom(userId, otherMemberId)?.let {
-            return it.id
-        }
 
         val newRoom = ChatRoom(isGroupChat = false, name = "${userId}-${otherMemberId}")
         chatRoomRepository.save(newRoom)
